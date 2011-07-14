@@ -1,0 +1,29 @@
+<html>
+<head>
+<title>Annotate Stuff</title>
+</head>
+<body>
+
+<h1>Annotate Stuff</h1>
+
+<p>To annotate, use this bookmarklet:</p>
+
+<a href="javascript:(function () {window.runBookmarklet = {app: {{repr(req.application_url)}} };var n = 'annotate-script';var s = document.getElementById(n);if (s)  s.parentNode.removeChild(s);s = document.createElement('script');s.src = {{repr(req.application_url + '/code.js')}};s.id = n;document.body.appendChild(s);})()">annotate</a>
+
+<!-- source:
+
+(function () {
+window.runBookmarklet = {app: {{repr(req.application_url)}} };
+var n = 'annotate-script';
+var s = document.getElementById(n);
+if (s)
+  s.parentNode.removeChild(s);
+s = document.createElement('script');
+s.src = {{repr(req.application_url + '/code.js')}};
+s.id = n;
+document.body.appendChild(s);
+})()
+
+-->
+
+</body> </html>
