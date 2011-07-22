@@ -1,0 +1,16 @@
+<html>
+<head>
+<script src="http://apps.mozillalabs.com/jschannel.js"></script>
+<script src="/code.js"></script>
+<script>
+var chan = Channel.build({window: window.parent, origin: "*", "script": "openwebapps_conduit"});
+chan.bind("dom.receive", function (trans, s) {
+  if (s) {
+    // FIXME: do something with the document in s
+  }
+});
+
+</script>
+</head>
+<body></body>
+</html>

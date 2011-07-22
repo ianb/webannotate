@@ -1,9 +1,7 @@
 function activateBookmarklet(appUrl) {
   addBaseHref();
   var doc = serializeDocument(document.getElementsByTagName('html')[0]);
-  // We'd add the script locally, but Chrome detects that as a XSS problem
-  // so add-script does it on the server side
-  var form = createForm(appUrl, 'text/html', doc, {'add-script': '1'});
+  var form = createForm(appUrl, 'text/html', doc, {'ui-type': 'annotation'});
   form.submit();
 }
 
@@ -134,7 +132,10 @@ function serializeDocument(el) {
 
 function createForm(appUrl, content_type, body, fields) {
   var form = document.createElement('form');
-  form.action = appUrl + '/' + quoteUrl(location.href);
+  var href = location.href + '';
+  href = href.replace(/^https?:\/\//i, '');
+  href = href.replace(/\//g, '.');
+  form.action = appUrl + '/' + quoteUrl(href);
   form.method = 'POST';
   form.appendChild(createField('content-type', content_type));
   form.appendChild(createField('body', body));
@@ -187,7 +188,8 @@ var styles = {
   bigButtonInactiveColor: '#999',
   annotationBackground: '#ff9',
   annotationHighlight: '#f99',
-  button: 'font-family: Helvetica, sans-serif; background: inherit; text-transform: none; letter-spacing: inherit; border-radius: 3px; padding: 3px; box-shadow: none; background-color: #bbb; color: #000; border: 2px outset #aaa; margin: 1px; '
+  button: 'font-family: Helvetica, sans-serif; background: inherit; text-transform: none; letter-spacing: inherit; border-radius: 3px; padding: 3px; box-shadow: none; background-color: #bbb; color: #000; border: 2px outset #aaa; margin: 1px; ',
+  link: 'color: #fff; text-decoration: underline'
 };
 
 function activateComments(appUrl, pageUrl) {
@@ -260,6 +262,13 @@ Server.prototype.showPanel = function () {
     '<span id="webannotate-annotate" style="'+styles.bigButton+'" title="Make annotations on the page">Annotate</span>' +
     '<span id="webannotate-view" style="'+styles.bigButton+'" title="View the page (without adding annotations)">View</span>' +
     '<span id="webannotate-hide" style="'+styles.bigButton+'" title="Hide all the annotations">Hide</span>' +
+    '<div id="webannotate-info" style="padding-top: 4px"><span style="cursor: pointer" id="webannotate-info-expand">Info: &#9656;</span>' +
+    '<div id="webannotate-info-details" style="display: none">' +
+    '<span id="webannotate-login-status"></span><br>' +
+    'URL: <a href="#" id="webannotate-info-url" target="_blank" style="'+styles.link+'"></a><br>' +
+    '<a href="#" id="webannotate-info-share" style="'+styles.link+'">Share</a>' +
+    '<input type="text" id="webannotate-info-share-link" style="display: none"><br>' +
+    '</div></div>' +
     '</div>';
   document.body.appendChild(this.panel);
   this.annotateButton = document.getElementById('webannotate-annotate');
@@ -279,10 +288,86 @@ Server.prototype.showPanel = function () {
       self.setView('hide');
     }
   }, false);
+  this.infoButton = document.getElementById('webannotate-info-expand');
+  this.infoDetails = document.getElementById('webannotate-info-details');
+  this.infoButton.addEventListener('click', function (ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (self.infoDetails.style.display) {
+      self.infoDetails.style.display = '';
+      self.infoButton.innerHTML = 'Info: &#9662;';
+    } else {
+      self.infoDetails.style.display = 'none';
+      self.infoButton.innerHTML = 'Info: &#9656;';
+    }
+  }, false);
+  var baseHref = document.getElementsByTagName('base')[0];
+  baseHref = baseHref.getAttribute('href');
+  var urlLink = document.getElementById('webannotate-info-url');
+  urlLink.appendChild(document.createTextNode(baseHref));
+  urlLink.href = baseHref;
+  this.shareButton = document.getElementById('webannotate-info-share');
+  this.shareText = document.getElementById('webannotate-info-share-link');
+  this.shareButton.addEventListener('click', function (ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    self.shareButton.innerHTML = 'Share...';
+    self.getShareLink(function (data) {
+      if (! data) {
+        self.shareButton.innerHTML = 'Share failed';
+        return;
+      }
+      self.shareButton.style.display = 'none';
+      self.shareText.style.display = '';
+      self.shareText.value = data.url;
+      self.shareText.focus();
+      self.shareText.select();
+      if (window.clipboardData) {
+        window.clipboardData.setData('text', self.shareText.value);
+      }
+      self.shareText.addEventListener('blur', function () {
+        self.shareText.style.display = 'none';
+        self.shareButton.innerHTML = 'Share';
+        self.shareButton.style.display = '';
+      }, false);
+    });
+  }, false);
+  this.loginStatus = document.getElementById('webannotate-login-status');
+  this.updateLoginStatus();
   this.clickListener = this.clickEvent.bind(this);
   this.changeListener = this.changeEvent.bind(this);
   this.annotationForm = new AnnotationForm(this);
   this.setView('annotate');
+};
+
+Server.prototype.updateLoginStatus = function (a) {
+  var self = this;
+  var email = WSGIBrowserID.loginStatus();
+  if (email) {
+    this.loginStatus.innerHTML = '';
+    this.loginStatus.appendChild(document.createTextNode(email));
+    this.loginStatus.innerHTML += ' <a href="#" style="'+styles.link+'">logout</a>';
+    var el = this.loginStatus.getElementsByTagName('a')[0];
+    el.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      // FIXME: should I reload here?
+      WSGIBrowserID.logout();
+      self.updateLoginStatus();
+    }, false);
+  } else {
+    this.loginStatus.innerHTML = '<a href="#" style="'+styles.link+'">login to ensure access</a>';
+    var el = this.loginStatus.getElementsByTagName('a')[0];
+    el.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      WSGIBrowserID.login(self.updateLoginStatus.bind(self));
+      // This will update any tokens to be bound to our login:
+      var req = new XMLHttpRequest();
+      req.open('GET', location.href);
+      req.send();
+    }, false);
+  }
 };
 
 Server.prototype.clickEvent = function (ev) {
@@ -414,6 +499,25 @@ Server.prototype.saveAnnotations = function (callback) {
     }
   };
   req.send(JSON.stringify(repr));
+};
+
+Server.prototype.getShareLink = function (callback) {
+  var self = this;
+  var req = new XMLHttpRequest();
+  req.open('GET', this.pageUrl + '?getlink');
+  req.onreadystatechange = function () {
+    if (req.readyState != 4) {
+      return;
+    }
+    if (req.status != 200) {
+      console.log('Got bad response to link request:', req.status, req);
+      callback(null);
+      return;
+    }
+    var data = JSON.parse(req.responseText);
+    callback(data);
+  };
+  req.send();
 };
 
 function AnnotationForm(server) {
@@ -960,4 +1064,3 @@ if (window.runComments) {
   var pageUrl = window.runComments.page;
   activateComments(appUrl, pageUrl);
 }
-
