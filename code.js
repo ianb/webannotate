@@ -134,6 +134,7 @@ function createForm(appUrl, content_type, body, fields) {
   var form = document.createElement('form');
   var href = location.href + '';
   href = href.replace(/^https?:\/\//i, '');
+  href = href.replace(/\/+$/, '');
   href = href.replace(/\//g, '.');
   form.action = appUrl + '/' + quoteUrl(href);
   form.method = 'POST';
@@ -169,8 +170,12 @@ function quoteText(text) {
 }
 
 function quoteAttr(attr) {
+  if (! attr) {
+    return '';
+  }
   if (! attr.replace) {
     console.log('weird', attr, typeof attr);
+    return '';
   }
   return attr.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 }
