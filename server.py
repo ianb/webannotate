@@ -12,6 +12,9 @@ try:
 except ImportError:
     import json
 import datetime
+import logging
+
+logger = logging.getLogger('annotate')
 
 
 here = os.path.dirname(os.path.abspath(__file__))
@@ -82,7 +85,7 @@ class Application(object):
         if add_cookie:
             resp.set_cookie(add_cookie[0], add_cookie[1], max_age=datetime.timedelta(days=10 * 365))
         if not req.userid and req.cookies.get(self.auth_app.cookie_name):
-            print 'Invalid cookie:', req.cookies.get(self.auth_app.cookie_name)
+            logger.debug('Invalid cookie: %r' % req.cookies.get(self.auth_app.cookie_name))
             ## Invalid cookie:
             resp.delete_cookie(self.auth_app.cookie_name)
         return resp
@@ -110,7 +113,7 @@ class Application(object):
         fn = auth.filename
         if req.method == 'GET':
             if not os.path.exists(fn):
-                print 'not found', fn
+                loging.debug('not found: %s' % fn)
                 return exc.HTTPNotFound()
             with open(fn, 'rb') as fp:
                 content_type = fp.readline().strip()
@@ -133,7 +136,7 @@ class Application(object):
                 fp.write(content_type.strip() + '\n')
                 fp.write(ui_type.strip() + '\n')
                 fp.write(body)
-            print 'redirecting to', url
+            logger.debug('redirecting to: %s' % url)
             return Response(
                 cache_expires=True,
                 status=303,
@@ -187,7 +190,6 @@ class AuthDomain(object):
         path = urllib.quote(self.path)
         if not path.startswith('/'):
             path = '/' + path
-        print 'got url', [self.req.application_url, self.lock, path]
         return self.req.application_url + '/a/%s%s' % (self.lock, path)
 
     @classmethod
@@ -266,7 +268,7 @@ class AuthDomain(object):
             if not op:
                 continue
             if ':' not in op:
-                print 'Bad cookie value: %r' % op
+                logger.debug('Bad cookie value: %r' % op)
                 continue
             lock, sig = op.split(':', 1)
             if lock == self.lock:
