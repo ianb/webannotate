@@ -1,7 +1,7 @@
-function activateBookmarklet(appUrl) {
+function activateBookmarklet(options) {
   addBaseHref();
   var doc = serializeDocument(document.getElementsByTagName('html')[0]);
-  var form = createForm(appUrl, 'text/html', doc, {'ui-type': 'annotation'});
+  var form = createForm(options.app, options.target, 'text/html', doc, {'ui-type': 'annotation'});
   form.submit();
 }
 
@@ -130,13 +130,16 @@ function serializeDocument(el) {
   return res;
 }
 
-function createForm(appUrl, content_type, body, fields) {
+function createForm(options, content_type, body, fields) {
   var form = document.createElement('form');
-  var href = location.href + '';
+  if (options.target) {
+    form.setAttribute('target', options.target);
+  }
+  var href = options.url || location.href + '';
   href = href.replace(/^https?:\/\//i, '');
   href = href.replace(/\/+$/, '');
   href = href.replace(/\//g, '.');
-  form.action = appUrl + '/' + quoteUrl(href);
+  form.action = options.app + '/' + quoteUrl(href);
   form.method = 'POST';
   form.appendChild(createField('content-type', content_type));
   form.appendChild(createField('body', body));
@@ -546,7 +549,8 @@ AnnotationForm.prototype.clickEvent = function (ev) {
   this.position(
     {top: ev.pageY, left: ev.pageX},
     {click: {element: ev.target.id,
-             offsetLeft: ev.pageX - elPos.left, offsetTop: ev.pageY - elPos.top}});
+             offsetLeft: ev.pageX - elPos.left, offsetTop: ev.pageY - elPos.top}
+     });
 };
 
 AnnotationForm.prototype.range = function (range) {
@@ -560,7 +564,8 @@ AnnotationForm.prototype.range = function (range) {
     {range: {start: range.start.id, end: range.end.id,
              startOffset: range.startOffset,
              endOffset: range.endOffset,
-             startText: range.startText, endText: range.endText}});
+             startText: range.startText, endText: range.endText}
+            });
 };
 
 function showAnnotationRange(range) {
@@ -1060,8 +1065,7 @@ function getElementPosition(el) {
  */
 
 if (window.runBookmarklet) {
-  var appUrl = window.runBookmarklet.app;
-  activateBookmarklet(appUrl);
+  activateBookmarklet(window.runBookmarklet);
 }
 
 if (window.runComments) {

@@ -3,6 +3,7 @@
 <html>
 <head>
 <title>Annotate Stuff</title>
+<script src="http://apps.localhost/jsapi/include.js"></script>
 </head>
 <body>
 
@@ -11,6 +12,12 @@
 <p>To annotate, use this bookmarklet:</p>
 
 <a href="javascript:(function () {window.runBookmarklet = {app: {{repr(req.application_url)}} };var n = 'annotate-script';var s = document.getElementById(n);if (s)  s.parentNode.removeChild(s);s = document.createElement('script');s.src = {{repr(req.application_url + '/code.js')}};s.id = n;document.body.appendChild(s);})()">annotate</a>
+
+<p>Or install the webapp and use the general screenshare bookmarklet:</p>
+
+<p><button type="button" onclick="navigator.apps.install({url: '/manifest.webapp'}); return false">Install App!</button></p>
+
+<p><a href="javascript:(function () {window.runBookmarklet = {generalsend: true};var n = 'annotate-script';var s = document.getElementById(n);if (s)  s.parentNode.removeChild(s);s = document.createElement('script');s.src = {{repr(req.application_url + '/dom.send.bookmarklet.js')}};s.id = n;document.body.appendChild(s);})()">share screen</a></p>
 
 <!-- source:
 

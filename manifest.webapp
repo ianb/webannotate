@@ -2,8 +2,8 @@
   "name": "Web Annotation",
   "experimental": {
     "services": {
-      "dom.receive": {
-        "endpoint": "/dom.receive.html"
+      "dom.send": {
+        "endpoint": "/dom.send.html"
       }
     }
   },

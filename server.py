@@ -2,16 +2,22 @@ import os
 import urllib
 import hmac
 import re
-from webob.dec import wsgify
-from webob import exc
-from webob import Response
-from tempita import HTMLTemplate
-from wsgibrowserid.wsgiapp import Application as BrowserApp
+import datetime
 try:
     import simplejson as json
 except ImportError:
     import json
-import datetime
+try:
+    from webob.dec import wsgify
+    from webob import exc
+    from webob import Response
+    from tempita import HTMLTemplate, Template
+    from wsgibrowserid.wsgiapp import Application as BrowserApp
+except ImportError:
+    print 'You must install webob and tempita and wsgibrowserid'
+    print '  pip install webob tempita git://github.com/ianb/wsgibrowserid.git'
+    print
+    raise
 
 
 here = os.path.dirname(os.path.abspath(__file__))
@@ -19,8 +25,9 @@ here = os.path.dirname(os.path.abspath(__file__))
 
 class Application(object):
 
-    def __init__(self, dir):
+    def __init__(self, dir, appinclude_js='https://myapps.mozillalabs.com/jsapi/include.js'):
         self.dir = dir
+        self.appinclude_js = appinclude_js
         self.auth_app = BrowserApp()
 
     @wsgify
@@ -29,15 +36,19 @@ class Application(object):
         if req.path_info == '/':
             return self.homepage(req)
         elif req.path_info == '/code.js':
-            return self.bookmarklet(req)
+            return self.bookmarklet(req, 'code.js')
+        #elif req.path_info == '/bookmarklet.js':
+        #    return self.bookmarklet(req, 'bookmarklet.js')
+        elif req.path_info == '/dom.send.bookmarklet.js':
+            return self.bookmarklet(req, 'dom.send.bookmarklet.js')
         elif req.path_info == '/manifest.webapp':
             return Response(
                 content_type='application/x-web-app-manifest+json',
                 body=open(os.path.join(here, 'manifest.webapp')).read())
-        elif req.path_info == '/dom.receive.html':
+        elif req.path_info == '/dom.send.html':
             return Response(
                 content_type='text/html',
-                body=open(os.path.join(here, 'dom.receive.html')).read())
+                body=open(os.path.join(here, 'dom.send.html')).read())
         elif req.path_info == '/favicon.ico':
             return exc.HTTPNotFound()
         elif req.path_info_peek() == 'auth':
@@ -51,11 +62,21 @@ class Application(object):
         resp = tmpl.substitute(app=self, req=req)
         return Response(body=resp)
 
-    def bookmarklet(self, req):
-        with open(os.path.join(here, 'code.js')) as fp:
-            return Response(
-                body=fp.read(),
-                content_type='application/javascript')
+    def bookmarklet(self, req, name):
+        tmpl = Template.from_filename(os.path.join(here, name))
+        with open(os.path.join(here, 'docserialize.js')) as fp:
+            docserialize = fp.read()
+        body = tmpl.substitute(
+            uiType='annotation',
+            appUrl=req.application_url,
+            options={},
+            bookmarkletUrl=req.url,
+            docserializeJs=docserialize,
+            appIncludeJs=self.appinclude_js,
+            )
+        return Response(
+            body=body,
+            content_type='application/javascript')
 
     def store(self, req):
         req.userid = self.get_userid(req)
