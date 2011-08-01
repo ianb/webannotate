@@ -54,11 +54,31 @@ class Application(object):
                 body=open(os.path.join(here, 'dom.send.html')).read())
         elif req.path_info == '/favicon.ico':
             return exc.HTTPNotFound()
+        elif req.path_info == '/getmanifest':
+            return self.get_manifest(req)
         elif req.path_info_peek() == 'auth':
             req.path_info_pop()
             return self.auth_app
         else:
             return self.store(req)
+
+    def get_manifest(self, req):
+        url = req.params.get('url')
+        if not url:
+            return Response(
+                status=400,
+                content_type='application/json',
+                body=json.dumps(dict(status='error', message="Missing required 'url' parameter")))
+        try:
+            resp = urllib.urlopen(url)
+        except Exception, e:
+            return Response(
+                status=502,
+                content_type='application/json',
+                body=json.dumps(dict(status='error', message='Unable to contact remote server (%s): %s' % (url, e))))
+        return Response(
+            content_type=resp.headers.getheader('content-type') or 'application/octet-stream',
+            body=resp.read())
 
     def homepage(self, req):
         tmpl = HTMLTemplate.from_filename(os.path.join(here, 'homepage.html'))

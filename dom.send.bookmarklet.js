@@ -28,7 +28,7 @@ function domSend() {
 // FIXME: should also check document.readyState:
 if (! navigator.apps) {
   var script = document.createElement('script');
-  script.src = 'http://apps.localhost/jsapi/include.js';
+  script.src = {{repr(appIncludeJs)}};
   document.body.appendChild(script);
   // FIXME: should make sure this loads somehow
   setTimeout(function () {
