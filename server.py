@@ -53,6 +53,10 @@ class Application(object):
                 req,
                 'dom.send.html',
                 content_type='text/html')
+        elif req.path_info == '/icon48.png':
+            return Response(
+              content_type='image/png',
+              body=open(os.path.join(here, 'icon48.png')).read())
         elif req.path_info == '/favicon.ico':
             return exc.HTTPNotFound()
         elif req.path_info == '/getmanifest':

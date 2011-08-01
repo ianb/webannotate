@@ -15,7 +15,19 @@
 
 <p>Or install the webapp and use the general screenshare bookmarklet:</p>
 
-<p><button type="button" onclick="navigator.apps.install({url: '/manifest.webapp'}); return false">Install App!</button></p>
+<p><button id="install-button" type="button" onclick="navigator.apps.install({url: '/manifest.webapp'}); return false">Install App!</button></p>
+
+<script>
+  navigator.apps.amInstalled(function (app) {
+    if (app) {
+      var button = document.getElementById('install-button');
+      button.innerHTML = 'App installed';
+      button.disabled = true;
+      button.style.backgroundColor = '#9f9';
+      button.style.color = '#333';
+    }
+  });
+</script>
 
 <p><a href="javascript:(function () {var n = 'annotate-script';var s = document.getElementById(n);if (s)  s.parentNode.removeChild(s);s = document.createElement('script');s.src = {{repr(req.application_url + '/dom.send.bookmarklet.js')}};s.id = n;document.body.appendChild(s);})()">share screen</a></p>
 
