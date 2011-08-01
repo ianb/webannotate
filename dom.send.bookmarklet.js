@@ -18,7 +18,9 @@ function domSend() {
   navigator.apps.invokeService('dom.send', data, function (v) {
     // Success
   }, function (e) {
-    // Error
+    if (window.console) {
+      console.log('Error invoking service: ' + e);
+    }
   });
 }
 
@@ -32,7 +34,6 @@ if (! navigator.apps) {
   document.body.appendChild(script);
   // FIXME: should make sure this loads somehow
   setTimeout(function () {
-  console.log('waiting...');
     if (navigator.apps) {
       domSend();
     } else {

@@ -49,9 +49,10 @@ class Application(object):
                 content_type='application/x-web-app-manifest+json',
                 body=open(os.path.join(here, 'manifest.webapp')).read())
         elif req.path_info == '/dom.send.html':
-            return Response(
-                content_type='text/html',
-                body=open(os.path.join(here, 'dom.send.html')).read())
+            return self.bookmarklet(
+                req,
+                'dom.send.html',
+                content_type='text/html')
         elif req.path_info == '/favicon.ico':
             return exc.HTTPNotFound()
         elif req.path_info == '/getmanifest':
@@ -82,10 +83,10 @@ class Application(object):
 
     def homepage(self, req):
         tmpl = HTMLTemplate.from_filename(os.path.join(here, 'homepage.html'))
-        resp = tmpl.substitute(app=self, req=req)
+        resp = tmpl.substitute(app=self, req=req, appIncludeJs=self.appinclude_js)
         return Response(body=resp)
 
-    def bookmarklet(self, req, name):
+    def bookmarklet(self, req, name, content_type='text/javascript'):
         tmpl = Template.from_filename(os.path.join(here, name))
         with open(os.path.join(here, 'docserialize.js')) as fp:
             docserialize = fp.read()
@@ -99,7 +100,7 @@ class Application(object):
             )
         return Response(
             body=body,
-            content_type='application/javascript')
+            content_type=content_type)
 
     def store(self, req):
         req.userid = self.get_userid(req)
@@ -154,7 +155,7 @@ class Application(object):
         fn = auth.filename
         if req.method == 'GET':
             if not os.path.exists(fn):
-                loging.debug('not found: %s' % fn)
+                logger.debug('not found: %s' % fn)
                 return exc.HTTPNotFound()
             with open(fn, 'rb') as fp:
                 content_type = fp.readline().strip()
