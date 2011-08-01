@@ -17,7 +17,7 @@
 
 <p><button type="button" onclick="navigator.apps.install({url: '/manifest.webapp'}); return false">Install App!</button></p>
 
-<p><a href="javascript:(function () {window.runBookmarklet = {generalsend: true};var n = 'annotate-script';var s = document.getElementById(n);if (s)  s.parentNode.removeChild(s);s = document.createElement('script');s.src = {{repr(req.application_url + '/dom.send.bookmarklet.js')}};s.id = n;document.body.appendChild(s);})()">share screen</a></p>
+<p><a href="javascript:(function () {var n = 'annotate-script';var s = document.getElementById(n);if (s)  s.parentNode.removeChild(s);s = document.createElement('script');s.src = {{repr(req.application_url + '/dom.send.bookmarklet.js')}};s.id = n;document.body.appendChild(s);})()">share screen</a></p>
 
 <!-- source:
 
