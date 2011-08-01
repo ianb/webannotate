@@ -1,5 +1,13 @@
 {
-  "name": "Web Annotation",
+  "name": "Annotate",
+  "description": "Annotate (comment on) web pages, save and share the results",
+  "icons": {
+    "48": "/icon48.png"
+  },
+  "developer": {
+    "name": "Ian Bicking",
+    "url": "http://annotate.ianbicking.org"
+  },
   "experimental": {
     "services": {
       "dom.send": {
